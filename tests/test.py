@@ -58,7 +58,12 @@ for fn in sorted(os.listdir(tests_folder)):
         outputs = list(map(lambda x: str(math.factorial(x) % 256), inputs))
         inputs  = [str(x) for x in range(10)]
         test(fn, inputs, outputs)
-        
+    elif fn == "07-fibonacci.bf93":
+        outputs = [1,1]
+        for i in range(2,13): outputs.append(outputs[-1] + outputs[-2])
+        outputs = list(map(str, outputs))
+        inputs  = list(map(str, range(0,13)))
+        test(fn, inputs, outputs)
 
 
 print("Total: {}/{} - {}%".format(successful, total, 100 * successful / total))

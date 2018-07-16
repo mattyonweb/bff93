@@ -151,7 +151,7 @@ void exec() {
                 if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
                     stackPush(stack, 0);
                 else
-                    stackPush(stack, CELL(c1, c2));
+                    stackPush(stack, CELL(c2, c1));
                 break;
             case 'p':
                 c1 = stackPop(stack), c2 = stackPop(stack), c3 = stackPop(stack);
