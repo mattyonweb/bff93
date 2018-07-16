@@ -27,8 +27,7 @@ void stackPush(Stack s, int val) {
 
 int stackPop(Stack s) {
     if (--(s -> count) < 0) {
-        printf("Stack sottozero; uscita\n");
-        exit(-1);
+        return 0;   // http://www.nsl.com/papers/befunge93/befunge93.htm
     }
     Node node = s -> top;
     s -> top = node -> next;
