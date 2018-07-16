@@ -16,5 +16,6 @@ Stack stackInit();
 void stackPush(Stack s, int el);
 int stackPop(Stack s);
 int stackCount(Stack s);
+void stackPrint(Stack s);
 
 #endif

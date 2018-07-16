@@ -3,6 +3,7 @@
 #include <time.h>
 #include "simple-stack.h"
 
+#define DEBUG 1
 #define CELL(x,y)   memory[80*y+x]
 #define FILLROW(firstX,y_)   for(int x_=firstX;x_<80;x_++) CELL(x_,y_)=0;
 
@@ -46,9 +47,13 @@ void exec() {
     unsigned char * ip  = memory;
     char dir            = RIGHT;
     stack               = stackInit();
+
+    if (DEBUG)  printf("ip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
     while (1) {
+        if (DEBUG) printf("%c\t", *ip);
+        
         switch (*ip) {
             case '+':
                 c1 = stackPop(stack), c2 = stackPop(stack);
@@ -169,6 +174,7 @@ void exec() {
                 break;
         }
 
+        if (DEBUG) stackPrint(stack);
         ip = move(dir, ip);
     }
 }

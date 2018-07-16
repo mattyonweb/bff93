@@ -39,3 +39,13 @@ int stackPop(Stack s) {
 int stackCount(Stack s) {
     return s -> count;
 }
+
+void stackPrint(Stack s) {
+    Node n = s -> top;
+    printf("\t[");
+    while (n != NULL) {
+        printf("%d,", n->val);
+        n = n-> next;
+    }
+    printf("]\n");
+}
