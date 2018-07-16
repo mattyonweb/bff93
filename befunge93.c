@@ -3,7 +3,7 @@
 #include <time.h>
 #include "simple-stack.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define CELL(x,y)   memory[80*y+x]
 #define FILLROW(firstX,y_)   for(int x_=firstX;x_<80;x_++) CELL(x_,y_)=0;
 
@@ -51,6 +51,7 @@ void exec() {
     if (DEBUG)  printf("ip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
+    char * string;
     while (1) {
         if (DEBUG) printf("%c\t", *ip);
         
@@ -158,8 +159,11 @@ void exec() {
                 break;
 
             case '&':
-                c1 = getchar();
-                stackPush(stack, c1 - 48); //Mah mah mah (ALTA PROBABILIYA BUG)
+                string = calloc(4, sizeof(char));
+                fgets(string, 4, stdin);
+                
+                stackPush(stack, atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                free(string);
                 break;
             case '~':
                 c1 = getchar();
