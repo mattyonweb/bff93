@@ -8,6 +8,7 @@
 void exec();
 void parse(FILE * f);
 void print();
+unsigned char * move(char dir, unsigned char *ip);
 
 unsigned char memory[80*25] = {0};
 Stack stack;
@@ -32,7 +33,7 @@ int main(int argv, char** argc) {
     }
     
     parse(fileSrc);
-    print();
+    //print();
     exec();
 }
 
@@ -42,122 +43,160 @@ void exec() {
     stack               = stackInit();
     
     unsigned char c1, c2, c3;
-    switch (*ip) {
-        case '+':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            stackPush(stack, c1+c2);
-            break;
-        case '-':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            stackPush(stack, c1-c2);
-            break;
-        case '*':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            stackPush(stack, c1*c2);
-            break;
-        case '/':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            if (c1 == 0)
-                stackPush(stack, 0); //undefined behaviour
-            else
-                stackPush(stack, c2 / c1);
-            break;
-        case '%':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            stackPush(stack, c2 % c1); //ordine giusto?
-            break;
+    while (1) {
+        switch (*ip) {
+            case '+':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                stackPush(stack, c1+c2);
+                break;
+            case '-':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                stackPush(stack, c1-c2);
+                break;
+            case '*':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                stackPush(stack, c1*c2);
+                break;
+            case '/':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                if (c1 == 0)
+                    stackPush(stack, 0); //undefined behaviour
+                else
+                    stackPush(stack, c2 / c1);
+                break;
+            case '%':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                stackPush(stack, c2 % c1); //ordine giusto?
+                break;
 
-        case '!':
-            c1 = stackPop(stack);
-            (c1 == 0) ? stackPush(stack, 1) : stackPush(stack, 0);
-            break;
-        case '`':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            (c2 > c1) ? stackPush(stack, 1) : stackPush(stack, 0);
-            break;
-            
-        case '>':
-            dir = RIGHT;
-            break;
-        case '<':
-            dir = LEFT;
-            break;
-        case '^':
-            dir = UP;
-            break;
-        case 'v':
-            dir = DOWN;
-            break;
-        case '?':
-            dir = rand() % 4;   //ritorna da 0 a 3 vero?
-            break;
-            
-        case '_':
-            c1 = stackPop(stack);
-            (c1 == 0) ? (dir = RIGHT) : (dir = LEFT); //funzionerà?
-            break;
-        case '|':
-            c1 = stackPop(stack);
-            (c1 == 0) ? (dir = DOWN) : (dir = UP); //funzionerà?
-            break;
+            case '!':
+                c1 = stackPop(stack);
+                (c1 == 0) ? stackPush(stack, 1) : stackPush(stack, 0);
+                break;
+            case '`':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                (c2 > c1) ? stackPush(stack, 1) : stackPush(stack, 0);
+                break;
+                
+            case '>':
+                dir = RIGHT;
+                break;
+            case '<':
+                dir = LEFT;
+                break;
+            case '^':
+                dir = UP;
+                break;
+            case 'v':
+                dir = DOWN;
+                break;
+            case '?':
+                dir = rand() % 4;   //ritorna da 0 a 3 vero?
+                break;
+                
+            case '_':
+                c1 = stackPop(stack);
+                (c1 == 0) ? (dir = RIGHT) : (dir = LEFT); //funzionerà?
+                break;
+            case '|':
+                c1 = stackPop(stack);
+                (c1 == 0) ? (dir = DOWN) : (dir = UP); //funzionerà?
+                break;
 
-        case '"':
-            // TODOTODOTODOTODOTODOTODOTODOTODOTODOTODOTODOTODO
-            break;
+            case '"':
+                ip = move(dir, ip);
+                while (*ip != '"') {
+                    stackPush(stack, *ip);
+                    ip++;
+                }
+                break;
 
-        case ':':
-            c1 = stackPop(stack);
-            stackPush(stack, c1);
-            stackPush(stack, c1);
-            break;
-        case '\\':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            stackPush(stack, c1);
-            stackPush(stack, c2);
-            break;
-        case '$':
-            stackPop(stack);
-            break;
-        case '.':
-            printf("%d", stackPop(stack));
-            break;
-        case ',':
-            printf("%c", stackPop(stack));
-            break;
+            case ':':
+                c1 = stackPop(stack);
+                stackPush(stack, c1);
+                stackPush(stack, c1);
+                break;
+            case '\\':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                stackPush(stack, c1);
+                stackPush(stack, c2);
+                break;
+            case '$':
+                stackPop(stack);
+                break;
+            case '.':
+                printf("%d", stackPop(stack));
+                break;
+            case ',':
+                printf("%c", stackPop(stack));
+                break;
 
-        case '#':
-            // TODOTODOTODOTODOTODOTODOTODOTODOTODOTODOTODOTODO
-            break;
+            case '#':
+                ip = move(dir, ip);
+                break;
 
-        case 'g':
-            c1 = stackPop(stack), c2 = stackPop(stack);
-            if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
-                stackPush(stack, 0);
-            else
-                stackPush(stack, CELL(c1, c2));
-            break;
-        case 'p':
-            c1 = stackPop(stack), c2 = stackPop(stack), c3 = stackPop(stack);
-            CELL(c2, c1) = c3;
-            break;
+            case 'g':
+                c1 = stackPop(stack), c2 = stackPop(stack);
+                if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
+                    stackPush(stack, 0);
+                else
+                    stackPush(stack, CELL(c1, c2));
+                break;
+            case 'p':
+                c1 = stackPop(stack), c2 = stackPop(stack), c3 = stackPop(stack);
+                CELL(c2, c1) = c3;
+                break;
 
-        case '&':
-            c1 = getchar();
-            stackPush(stack, atoi(&c1)); //Mah mah mah
-            break;
-        case '~':
-            c1 = getchar();
-            stackPush(stack, c1); //Mah mah mah
-            break;
+            case '&':
+                c1 = getchar();
+                stackPush(stack, atoi(&c1)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                break;
+            case '~':
+                c1 = getchar();
+                stackPush(stack, c1); //Mah mah mah
+                break;
 
-        case '@':
-            return;
+            case '@':
+                return;
 
-        case '0' ... '9':
-            stackPush(stack, atoi(ip));
-            break;
+            case '0' ... '9':
+                stackPush(stack, *ip - 48);
+                break;
+        }
+
+        ip = move(dir, ip);
     }
-}   
+}
+
+unsigned char * move (char dir, unsigned char *ip) {
+    int pos = ip - memory;
+    switch(dir) {
+        case UP:
+            pos -= 80;
+            if (pos < 0)
+                pos += 80 * 25 - 1; // Booooh... mah...
+            return memory + pos;
+        case DOWN:
+            pos += 80;
+            if (pos > 80 * 25 - 1)
+                pos -= 80 * 25 + 1;
+            return memory + pos;
+        case RIGHT:
+            pos += 1;
+            if (pos % 80 == 0)
+                pos -= 80;
+            return memory + pos;
+        case LEFT:
+            pos -= 1;
+            if (pos % 80 == 79)
+                pos += 80;
+            return memory + pos;
+        default:
+            printf("ERROR");
+            exit(-1);
+    }
+}
+
     
 void parse(FILE * fileSrc) {
     /* From file to a 80x25 matrix. */
