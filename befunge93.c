@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "simple-stack.h"
 
 #define CELL(x,y)   memory[80*y+x]
@@ -12,6 +13,8 @@ unsigned char * move(char dir, unsigned char *ip);
 
 unsigned char memory[80*25] = {0};
 Stack stack;
+
+time_t t;
 
 enum direction {
     UP = 0,
@@ -31,9 +34,11 @@ int main(int argv, char** argc) {
         printf("File not found. Exiting...");
         exit(-1); 
     }
+
     
     parse(fileSrc);
-    //print();
+
+    srand(time(&t));  // for the RNG
     exec();
 }
 
@@ -51,7 +56,7 @@ void exec() {
                 break;
             case '-':
                 c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c1-c2);
+                stackPush(stack, c2-c1);
                 break;
             case '*':
                 c1 = stackPop(stack), c2 = stackPop(stack);
@@ -91,16 +96,16 @@ void exec() {
                 dir = DOWN;
                 break;
             case '?':
-                dir = rand() % 4;   //ritorna da 0 a 3 vero?
+                dir = rand() % 4;   // Giusto
                 break;
                 
             case '_':
                 c1 = stackPop(stack);
-                (c1 == 0) ? (dir = RIGHT) : (dir = LEFT); //funzionerà?
+                (c1 == 0) ? (dir = RIGHT) : (dir = LEFT); // Testato, funziona
                 break;
             case '|':
                 c1 = stackPop(stack);
-                (c1 == 0) ? (dir = DOWN) : (dir = UP); //funzionerà?
+                (c1 == 0) ? (dir = DOWN) : (dir = UP); // Testato, funziona
                 break;
 
             case '"':
@@ -149,7 +154,7 @@ void exec() {
 
             case '&':
                 c1 = getchar();
-                stackPush(stack, atoi(&c1)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                stackPush(stack, c1 - 48); //Mah mah mah (ALTA PROBABILIYA BUG)
                 break;
             case '~':
                 c1 = getchar();
