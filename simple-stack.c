@@ -26,9 +26,13 @@ void stackPush(Stack s, int val) {
 }
 
 int stackPop(Stack s) {
-    if (--(s -> count) < 0) {
+    //if (--(s -> count) < 0) {
+        //return 0;   // http://www.nsl.com/papers/befunge93/befunge93.htm
+    //}
+    if ((s -> count) == 0) {
         return 0;   // http://www.nsl.com/papers/befunge93/befunge93.htm
     }
+    (s -> count)--;
     Node node = s -> top;
     s -> top = node -> next;
     int result = node -> val;
