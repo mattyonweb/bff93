@@ -58,10 +58,6 @@ for fn in os.listdir("../tests/"):
 
     matrix = fill_matrix(matrix)
     width, height = len(max(matrix, key=len)), len(matrix)
-
-    if "fibonacci" in fn:
-        for r in matrix: print(r)
-        #print(matrix)
         
     img = Image.new("RGB", (width * W_RECT, height * H_RECT), "white")
     draw = ImageDraw.Draw(img)
