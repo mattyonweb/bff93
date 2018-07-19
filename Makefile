@@ -1,2 +1,2 @@
-make: bff93.c simple-stack.c parse.c
-	gcc -g bff93.c simple-stack.c parse.c -o bff93
+make: src/bff93.c src/simple-stack.c src/parse.c
+	gcc -g src/bff93.c src/simple-stack.c src/parse.c -o bff93
