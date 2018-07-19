@@ -5,8 +5,7 @@
 #include "simple-stack.h"
 #include "parse.h"
 
-void exec();
-void print();
+void exec(int debugMode);
 unsigned char * move(char dir, unsigned char *ip);
 
 Stack stack;
@@ -21,35 +20,42 @@ enum direction {
 };
     
 int main(int argv, char** argc) {
-    if (argv != 2) {
+    /* argc[0]  ->  befunge93
+     * argc[1] if argn==3  ->  debug mode
+     * argc[1] if argn==2  ->  filename
+     * argc[2] if argn==3  ->  filename     */
+    
+    if (argv == 1 || argv > 3) {
         printf("befunge93\n");
         exit(-1);
     }
+
+    int filenameIdx = (argv == 2) ? 1 : 2;
+    int debugMode   = (argv == 3) ? *argc[1] - 48 : 0;
     
-    FILE * fileSrc = fopen(argc[1], "rb");
+    FILE * fileSrc = fopen(argc[filenameIdx], "rb");
     if (fileSrc == NULL) {
         printf("File not found. Exiting...");
         exit(-1); 
     }
-
     
     parse(fileSrc);
 
     srand(time(&t));  // for the RNG
-    exec();
+    exec(debugMode);
 }
 
-void exec() {
+void exec(int debugMode) {
     unsigned char * ip  = memory;
     char dir            = RIGHT;
     stack               = stackInit();
 
-    if (DEBUG)  printf("ip\tout\tstack\n");
+    if (debugMode)  printf("ip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
     char * string;
     while (1) {
-        if (DEBUG) printf("%c\t", *ip);
+        if (debugMode) printf("%c\t", *ip);
         
         switch (*ip) {
             case '+':
@@ -174,7 +180,7 @@ void exec() {
                 break;
         }
 
-        if (DEBUG) stackPrint(stack);
+        if (debugMode) stackPrint(stack);
         ip = move(dir, ip);
     }
 }

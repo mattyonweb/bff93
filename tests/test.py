@@ -64,6 +64,10 @@ for fn in sorted(os.listdir(tests_folder)):
         outputs = list(map(str, outputs))
         inputs  = list(map(str, range(0,13)))
         test(fn, inputs, outputs)
+    elif fn == "08-parenthesis-matching.bf93":
+        inputs  = list(map(lambda s: s + "\n", ["", "[", "[]", "[[[][[[]]]]]", "[[[[[[[[[[[[[[[[[[[[][[[[[[[[[[[[[[[[[]][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]][[[]]]]]]]]]]]]]]]]]]]][]]]]]]]]]]]]]]]"]))
+        outputs = list(map(lambda s: s + "\n", ["OK", "NOT OK", "OK", "OK", "NOT OK"]))
+        test(fn, inputs, outputs)
 
 
 print("Total: {}/{} - {}%".format(successful, total, 100 * successful / total))
