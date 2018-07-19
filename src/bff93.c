@@ -8,7 +8,7 @@
 void exec(int debugMode);
 unsigned char * move(char dir, unsigned char *ip);
 
-Stack stack;
+Stack * stacks;
 
 time_t t;
 
@@ -53,142 +53,158 @@ int main(int argv, char** argc) {
 }
 
 void exec(int debugMode) {
-    unsigned char * ip  = memory;
-    char dir            = RIGHT;
-    stack               = stackInit();
+    int numThreads = 1;
+        
+    unsigned char ** ips = calloc(numThreads, sizeof(unsigned char *));
+    ips[0] = memory;
+    
+    char * dirs = calloc(numThreads, sizeof(char));
+    dirs[0] = RIGHT;
+    
+    stacks = calloc(numThreads, sizeof(Stack));
+    stacks[0] = stackInit();
+
 
     if (debugMode)  printf("ip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
     char * string;
     while (1) {
-        if (debugMode) printf("%c\t", *ip);
-        
-        switch (*ip) {
-            case '+':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c1+c2);
-                break;
-            case '-':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c2-c1);
-                break;
-            case '*':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c1*c2);
-                break;
-            case '/':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                if (c1 == 0)
-                    stackPush(stack, 0); //undefined behaviour
-                else
-                    stackPush(stack, c2 / c1);
-                break;
-            case '%':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c2 % c1); //ordine giusto?
-                break;
+        for (int thread=0; thread < numThreads; thread++) {
+            //Stack stack = stacks[thread];
+            //unsigned char * ip = ips[thread];
+            char dir = dirs[thread];
+            
+            if (debugMode) printf("%c\t", *ips[thread]);
+            
+            switch (*ips[thread]) {
+                case '+':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c1+c2);
+                    break;
+                case '-':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c2-c1);
+                    break;
+                case '*':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c1*c2);
+                    break;
+                case '/':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    if (c1 == 0)
+                        stackPush(stacks[thread], 0); //undefined behaviour
+                    else
+                        stackPush(stacks[thread], c2 / c1);
+                    break;
+                case '%':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c2 % c1); //ordine giusto?
+                    break;
 
-            case '!':
-                c1 = stackPop(stack);
-                (c1 == 0) ? stackPush(stack, 1) : stackPush(stack, 0);
-                break;
-            case '`':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                (c2 > c1) ? stackPush(stack, 1) : stackPush(stack, 0);
-                break;
+                case '!':
+                    c1 = stackPop(stacks[thread]);
+                    (c1 == 0) ? stackPush(stacks[thread], 1) : stackPush(stacks[thread], 0);
+                    break;
+                case '`':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    (c2 > c1) ? stackPush(stacks[thread], 1) : stackPush(stacks[thread], 0);
+                    break;
+                    
+                case '>':
+                    dirs[thread] = RIGHT;
+                    break;
+                case '<':
+                    dirs[thread] = LEFT;
+                    break;
+                case '^':
+                    dirs[thread] = UP;
+                    break;
+                case 'v':
+                    dirs[thread] = DOWN;
+                    break;
+                case '?':
+                    dirs[thread] = rand() % 4;   // Giusto
+                    break;
+                    
+                case '_':
+                    c1 = stackPop(stacks[thread]);
+                    (c1 == 0) ? (dirs[thread] = RIGHT) : (dirs[thread] = LEFT); // Testato, funziona
+                    break;
+                case '|':
+                    c1 = stackPop(stacks[thread]);
+                    (c1 == 0) ? (dirs[thread] = DOWN) : (dirs[thread] = UP); // Testato, funziona
+                    break;
+
+                case '"':
+                    ips[thread] = move(dirs[thread], ips[thread]);
+                    while (*ips[thread] != '"') {
+                        stackPush(stacks[thread], *ips[thread]);
+                        ips[thread] = move(dirs[thread], ips[thread]);
+                    }
+                    break;
+
+                case ':':
+                    c1 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c1);
+                    stackPush(stacks[thread], c1);
+                    break;
+                case '\\':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    stackPush(stacks[thread], c1);
+                    stackPush(stacks[thread], c2);
+                    break;
+                case '$':
+                    stackPop(stacks[thread]);
+                    break;
+                case '.':
+                    printf("%d ", stackPop(stacks[thread]));
+                    break;
+                case ',':
+                    printf("%c", stackPop(stacks[thread]));
+                    break;
+
+                case '#':
+                    ips[thread] = move(dirs[thread], ips[thread]);
+                    break;
+
+                case 'g':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
+                        stackPush(stacks[thread], 0);
+                    else
+                        stackPush(stacks[thread], CELL(c2, c1));
+                    break;
+                case 'p':
+                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]), c3 = stackPop(stacks[thread]);
+                    CELL(c2, c1) = c3;
+                    break;
+
+                case '&':
+                    string = calloc(4, sizeof(char));
+                    fgets(string, 4, stdin);
+                    
+                    stackPush(stacks[thread], atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                    free(string);
+                    break;
+                case '~':
+                    c1 = getchar();
+                    stackPush(stacks[thread], c1); //Mah mah mah
+                    break;
+
                 
-            case '>':
-                dir = RIGHT;
-                break;
-            case '<':
-                dir = LEFT;
-                break;
-            case '^':
-                dir = UP;
-                break;
-            case 'v':
-                dir = DOWN;
-                break;
-            case '?':
-                dir = rand() % 4;   // Giusto
-                break;
-                
-            case '_':
-                c1 = stackPop(stack);
-                (c1 == 0) ? (dir = RIGHT) : (dir = LEFT); // Testato, funziona
-                break;
-            case '|':
-                c1 = stackPop(stack);
-                (c1 == 0) ? (dir = DOWN) : (dir = UP); // Testato, funziona
-                break;
+                case '@':
+                    return;
 
-            case '"':
-                ip = move(dir, ip);
-                while (*ip != '"') {
-                    stackPush(stack, *ip);
-                    ip = move(dir, ip);
-                }
-                break;
+                case '0' ... '9':
+                    stackPush(stacks[thread], *ips[thread] - 48);
+                    break;
+            }
 
-            case ':':
-                c1 = stackPop(stack);
-                stackPush(stack, c1);
-                stackPush(stack, c1);
-                break;
-            case '\\':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                stackPush(stack, c1);
-                stackPush(stack, c2);
-                break;
-            case '$':
-                stackPop(stack);
-                break;
-            case '.':
-                printf("%d ", stackPop(stack));
-                break;
-            case ',':
-                printf("%c", stackPop(stack));
-                break;
-
-            case '#':
-                ip = move(dir, ip);
-                break;
-
-            case 'g':
-                c1 = stackPop(stack), c2 = stackPop(stack);
-                if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
-                    stackPush(stack, 0);
-                else
-                    stackPush(stack, CELL(c2, c1));
-                break;
-            case 'p':
-                c1 = stackPop(stack), c2 = stackPop(stack), c3 = stackPop(stack);
-                CELL(c2, c1) = c3;
-                break;
-
-            case '&':
-                string = calloc(4, sizeof(char));
-                fgets(string, 4, stdin);
-                
-                stackPush(stack, atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
-                free(string);
-                break;
-            case '~':
-                c1 = getchar();
-                stackPush(stack, c1); //Mah mah mah
-                break;
-
-            case '@':
-                return;
-
-            case '0' ... '9':
-                stackPush(stack, *ip - 48);
-                break;
+            if (debugMode) stackPrint(stacks[thread]);
+            ips[thread] = move(dirs[thread], ips[thread]);
         }
 
-        if (debugMode) stackPrint(stack);
-        ip = move(dir, ip);
     }
 }
 
