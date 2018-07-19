@@ -2,6 +2,8 @@
 
 A simple but strict befunge93 interpreter written in C. 
 
+![Mondrian-esquized befunge93 fibonacci](/out/07-fibonacci.bf93.jpg)
+
 Some notes:
 - The interpreter may have bugs.
 - Every cell has dimension of `sizeof(unsigned char)`, usually 1 byte; every value stored has to be considered modulo maxValue, usually 255.
@@ -22,3 +24,4 @@ To mondrian-esquize your sources:
 
     cd utils
     python piet.py
+    
