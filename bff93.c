@@ -26,7 +26,14 @@ int main(int argv, char** argc) {
      * argc[2] if argn==3  ->  filename     */
     
     if (argv == 1 || argv > 3) {
-        printf("befunge93\n");
+        printf("bff93 - a befunge93 interpreter\n\n");
+        printf("Syntax:\n");
+        printf("\tbff93 <opt: debug> path/to/file\n");
+        printf("\n");
+        printf("Usage:\n");
+        printf("\t- without the debug flag, bff93 runs the .bf93 file as it is.\n");
+        printf("\t- if debug != 0, <filename>.bf93's trace is sent to stdout.\n");
+        printf("\t- bff93 with no arguments prints this text.\n");
         exit(-1);
     }
 

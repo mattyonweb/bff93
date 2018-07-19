@@ -9,6 +9,7 @@ total = 0
 def test(fn, inputs, expecteds, func=lambda i,e:i==bytes(e, "UTF-8")):
     global successful
     global total
+    print(fn)
     tests_num, successful_ = len(expecteds), 0
     
     for inp, exp in zip(inputs, expecteds):
@@ -30,15 +31,13 @@ NUM_TESTS = 25
 
 where_am_i   = os.path.abspath(__file__)
 tests_folder = "/".join(where_am_i.split("/")[:-1])
-binary_path  = "/".join(tests_folder.split("/")[:-1]) + "/befunge93"
+binary_path  = "/".join(tests_folder.split("/")[:-1]) + "/bff93"
 
 endspace = lambda l: list(map(lambda s: s+" ", l))
 
 for fn in sorted(os.listdir(tests_folder)):
     if fn[-4:] != "bf93":
         continue
-
-    print(fn)
 
     if fn == "01-get-and-print-int.bf93":
         inputs = [str(random.randint(0, 255)) for _ in range(NUM_TESTS)]
@@ -72,6 +71,30 @@ for fn in sorted(os.listdir(tests_folder)):
         inputs  = list(map(lambda s: s + "\n", ["", "[", "[]", "[[[][[[]]]]]", "[[[[[[[[[[[[[[[[[[[[][[[[[[[[[[[[[[[[[]][[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]][[[]]]]]]]]]]]]]]]]]]]][]]]]]]]]]]]]]]]"]))
         outputs = list(map(lambda s: s + "\n", ["OK", "NOT OK", "OK", "OK", "NOT OK"]))
         test(fn, inputs, outputs)
+    elif fn == "10-digital-root.bf93":
+        def digital_root(x):
+            persistance, length = 0, len(str(x))
+            while (length != 1):
+                #print(x)
+                x = sum(int(n) for n in str(x))
+                length = len(str(x))
+                persistance += 1
+            return [x, persistance]
+            
+        inputs  = [random.randint(0, 999999999) for _ in range(NUM_TESTS)]
+        outputs = list(map(digital_root, inputs))
+        inputs  = list(map(str, inputs))
 
+        def extract_func(stdout, expected):
+            stdout = stdout.decode()
+            out_str = stdout.replace("Enter number: ","").replace("\nDigital root: ","").replace("Additive Persistence: ","").split("\n")
+            out = list(map(int, out_str[:-1]))
+            return expected == out
+
+        test(fn, inputs, outputs, extract_func)
+    else:
+        print(fn)
+        print("\tNo test aviable.")
+        print()
 
 print("Total: {}/{} - {}%".format(successful, total, 100 * successful / total))
