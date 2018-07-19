@@ -1,8 +1,16 @@
-import sys, os
+import sys, os, shutil
 from PIL import Image, ImageDraw
 
 W_RECT = 10
 H_RECT = 10
+
+where_am_i   = "/".join(os.path.abspath(__file__).split("/")[:-1]) + "/"
+tests_folder = "/".join(where_am_i.split("/")[:-2]) + "/tests/"
+out_folder   = "/".join(os.path.abspath(__file__).split("/")[:-2]) + "/out/"
+
+#print(where_am_i)
+#print(tests_folder)
+#print(out_folder)
 
 colors = {
     "+" : (255,162,142),    # arancionicci
@@ -52,8 +60,10 @@ def fill_matrix(matrix):
             
     return matrix
 
-for fn in os.listdir("../tests/"):
-    with open("../tests/"+fn, "r") as f:
+for fn in os.listdir(tests_folder):
+    if fn[-2:] == "py": continue
+    
+    with open(tests_folder+fn, "r") as f:
         matrix = f.readlines()
 
     matrix = fill_matrix(matrix)
@@ -71,4 +81,8 @@ for fn in os.listdir("../tests/"):
                 
             draw.rectangle([x*W_RECT,y*H_RECT,W_RECT*(x+1),H_RECT*(y+1)], color, color)
 
-    img.save(fn + ".jpg")
+    img.save(where_am_i + fn + ".jpg")
+    shutil.move(where_am_i + fn + ".jpg", out_folder + fn + ".jpg")
+
+print("Done!")
+print("Output files in {}".format(out_folder))
