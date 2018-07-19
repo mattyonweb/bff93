@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "state.h"
-#include "simple-stack.h"
+#include "datastruct.h"
 #include "parse.h"
 
 void exec(int debugMode);
@@ -54,7 +54,9 @@ int main(int argv, char** argc) {
 
 void exec(int debugMode) {
     int numThreads = 1;
-        
+
+    Node orderExecution = nodeInit(0);
+    
     unsigned char ** ips = calloc(numThreads, sizeof(unsigned char *));
     ips[0] = memory;
     
@@ -69,13 +71,13 @@ void exec(int debugMode) {
     
     unsigned char c1, c2, c3;
     char * string;
+    char updateIp = 1;
     while (1) {
-        for (int thread=0; thread < numThreads; thread++) {
-            //Stack stack = stacks[thread];
-            //unsigned char * ip = ips[thread];
-            char dir = dirs[thread];
-            
-            if (debugMode) printf("%c\t", *ips[thread]);
+        for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
+            int thread = threadId -> val;
+            updateIp = 1;
+                
+            if (debugMode) printf("%d\t%c\t", thread, *ips[thread]);
             
             switch (*ips[thread]) {
                 case '+':
@@ -126,14 +128,32 @@ void exec(int debugMode) {
                 case '?':
                     dirs[thread] = rand() % 4;   // Giusto
                     break;
+                case '{':
+                    numThreads++;
+                    ips = realloc(ips, numThreads * sizeof(unsigned char *));
+                    stacks = realloc(stacks, numThreads * sizeof(Stack));
+                    dirs = realloc(dirs, numThreads * sizeof(char));
+
+                    linkedExpand(orderExecution, thread, numThreads-1); //giusto se messo proprio qui?
+
+                    ips[numThreads-1] = move(DOWN, ips[thread]);    //copia 1:1 di ips[thread],
+                    
+                    stacks[numThreads-1] = malloc(sizeof(Stack));
+                    stacks[numThreads-1] = stackCopy(stacks[thread]);
+                    dirs[numThreads-1] = dirs[thread];
+
+                    ips[thread] = move(UP, ips[thread]);
+
+                    updateIp = 0;
+                    break;
                     
                 case '_':
                     c1 = stackPop(stacks[thread]);
-                    (c1 == 0) ? (dirs[thread] = RIGHT) : (dirs[thread] = LEFT); // Testato, funziona
+                    (c1 == 0) ? (dirs[thread] = RIGHT) : (dirs[thread] = LEFT);
                     break;
                 case '|':
                     c1 = stackPop(stacks[thread]);
-                    (c1 == 0) ? (dirs[thread] = DOWN) : (dirs[thread] = UP); // Testato, funziona
+                    (c1 == 0) ? (dirs[thread] = DOWN) : (dirs[thread] = UP);
                     break;
 
                 case '"':
@@ -194,7 +214,22 @@ void exec(int debugMode) {
 
                 
                 case '@':
-                    return;
+                    numThreads--;
+                    if (numThreads == 0) return;
+                    
+                    ips = realloc(ips, numThreads * sizeof(unsigned char *));
+                    stacks = realloc(stacks, numThreads * sizeof(Stack));
+                    dirs = realloc(dirs, numThreads * sizeof(char));
+
+                    linkedRemove(orderExecution, thread);
+                    
+                    //ips[thread] = NULL;
+                    //free(stacks[thread]);
+                    //dirs[thread] = -1;
+
+                    //return;
+                    updateIp = 0;
+                    break;
 
                 case '0' ... '9':
                     stackPush(stacks[thread], *ips[thread] - 48);
@@ -202,7 +237,7 @@ void exec(int debugMode) {
             }
 
             if (debugMode) stackPrint(stacks[thread]);
-            ips[thread] = move(dirs[thread], ips[thread]);
+            if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
         }
 
     }
