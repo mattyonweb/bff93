@@ -72,8 +72,14 @@ void exec(int debugMode) {
     unsigned char c1, c2, c3;
     char * string;
     char updateIp = 1;
+    
     while (1) {
+        int i = 0;
+        
         for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
+            if (i >= numThreads) continue;
+            //if (threadCompletated >= numThread) continue;
+            
             int thread = threadId -> val;
             updateIp = 1;
                 
@@ -140,7 +146,8 @@ void exec(int debugMode) {
                     
                     stacks[numThreads-1] = malloc(sizeof(Stack));
                     stacks[numThreads-1] = stackCopy(stacks[thread]);
-                    dirs[numThreads-1] = dirs[thread];
+                    //dirs[numThreads-1] = dirs[thread];  //siamo sicuri? direzione di default è DX
+                    dirs[numThreads-1] = RIGHT;
 
                     ips[thread] = move(UP, ips[thread]);
 
@@ -238,6 +245,7 @@ void exec(int debugMode) {
 
             if (debugMode) stackPrint(stacks[thread]);
             if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
+            i++;
         }
 
     }
