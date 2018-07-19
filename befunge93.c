@@ -120,7 +120,7 @@ void exec(int debugMode) {
                 ip = move(dir, ip);
                 while (*ip != '"') {
                     stackPush(stack, *ip);
-                    ip++;
+                    ip = move(dir, ip);
                 }
                 break;
 
@@ -138,7 +138,7 @@ void exec(int debugMode) {
                 stackPop(stack);
                 break;
             case '.':
-                printf("%d", stackPop(stack));
+                printf("%d ", stackPop(stack));
                 break;
             case ',':
                 printf("%c", stackPop(stack));

@@ -16,8 +16,10 @@ def test(fn, inputs, expecteds, func=lambda i,e:i==bytes(e, "UTF-8")):
         outcome = func(res, exp)
         if outcome: successful_ += 1
         print("\tInput:{} \t--->\tResult:{}".format(inp, res), end="\t")
-        print(outcome)
-
+        print(outcome, end="")
+        if (not outcome): print("\tExpected: {}".format(exp))
+        else:             print("")
+        
     print()
     print("\tTests passed:{}/{} - {}%\n".format(successful_, tests_num, 100 * successful_ / tests_num))
     successful += successful_
@@ -30,15 +32,17 @@ where_am_i   = os.path.abspath(__file__)
 tests_folder = "/".join(where_am_i.split("/")[:-1])
 binary_path  = "/".join(tests_folder.split("/")[:-1]) + "/befunge93"
 
+endspace = lambda l: list(map(lambda s: s+" ", l))
+
 for fn in sorted(os.listdir(tests_folder)):
     if fn[-4:] != "bf93":
         continue
 
     print(fn)
 
-
     if fn == "01-get-and-print-int.bf93":
-        inputs = outputs = [str(random.randint(0, 255)) for _ in range(NUM_TESTS)]
+        inputs = [str(random.randint(0, 255)) for _ in range(NUM_TESTS)]
+        outputs = endspace(inputs)
         test(fn, inputs, outputs)
     elif fn == "02-hello-world.bf93":
         inputs  = [str(random.randint(0, 255))]
@@ -52,16 +56,16 @@ for fn in sorted(os.listdir(tests_folder)):
         func    = lambda res,exp: int(res) in exp
         test(fn, inputs, outputs, func)
     elif fn == "04-moving.bf93":
-        test(fn, [""], ["9"])
+        test(fn, [""], ["9 "])
     elif fn == "05-factorial.bf93":
         inputs  = range(0,10)
-        outputs = list(map(lambda x: str(math.factorial(x) % 256), inputs))
+        outputs = endspace(list(map(lambda x: str(math.factorial(x) % 256), inputs)))
         inputs  = [str(x) for x in range(10)]
         test(fn, inputs, outputs)
     elif fn == "07-fibonacci.bf93":
         outputs = [1,1]
         for i in range(2,13): outputs.append(outputs[-1] + outputs[-2])
-        outputs = list(map(str, outputs))
+        outputs = endspace(list(map(str, outputs)))
         inputs  = list(map(str, range(0,13)))
         test(fn, inputs, outputs)
     elif fn == "08-parenthesis-matching.bf93":
