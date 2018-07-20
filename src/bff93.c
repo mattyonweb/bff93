@@ -67,20 +67,22 @@ void exec(int debugMode) {
     stacks[0] = stackInit();
 
 
-    if (debugMode)  printf("ip\tout\tstack\n");
+    if (debugMode)  printf("tid\tip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
     char * string;
     char updateIp = 1;
     
     while (1) {
-        int i = 0;
-        
+        int threadExecuted = 0;
+        int threadToExecute = numThreads;
+
         for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
-            if (i >= numThreads) continue;
-            //if (threadCompletated >= numThread) continue;
+            if (threadExecuted >= numThreads) continue; //per gestire la fine di un thread in questo turno
+            //if (threadToExecute < numThreads && threadExecuted >= threadToExecute) continue; 
             
             int thread = threadId -> val;
+            if (thread > threadToExecute-1) continue;
             updateIp = 1;
                 
             if (debugMode) printf("%d\t%c\t", thread, *ips[thread]);
@@ -146,12 +148,12 @@ void exec(int debugMode) {
                     
                     stacks[numThreads-1] = malloc(sizeof(Stack));
                     stacks[numThreads-1] = stackCopy(stacks[thread]);
-                    //dirs[numThreads-1] = dirs[thread];  //siamo sicuri? direzione di default è DX
                     dirs[numThreads-1] = RIGHT;
 
                     ips[thread] = move(UP, ips[thread]);
 
                     updateIp = 0;
+
                     break;
                     
                 case '_':
@@ -245,7 +247,7 @@ void exec(int debugMode) {
 
             if (debugMode) stackPrint(stacks[thread]);
             if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
-            i++;
+            threadExecuted++;
         }
 
     }
