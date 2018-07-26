@@ -1,12 +1,3 @@
-> " mus" ,,,, v  v            p 0 2 + 1 g02  <
-v ,,,,,"idx1 "<             > 1 0 g 1 + 10p  ^
-> " 2xdi",,,,,v  > 20g"@"\- |
-v       ,+91  <  ^          
-> 010p 020p 030p {          > 30g 20g 10g . . . 91+, @
-  sum  idx1 idx2 v
-                 > 30g"@"\-!|
-                            > 10g 1+ 10p v
-                 ^            p03 +1 g03 <
-
-Race condition example. Just space out a bit one of the thread and the sum
-will not be the one expected (64+64=128)
+v   > 1 . @
+> 1 {
+    > 2 . @
