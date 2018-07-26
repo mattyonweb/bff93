@@ -6,14 +6,15 @@ import math
 successful = 0
 total = 0
 
-def test(fn, inputs, expecteds, func=lambda i,e:i==bytes(e, "UTF-8")):
+def test(fn, inputs, expecteds, func=lambda i,e:i==bytes(e, "UTF-8"), threaded=False):
     global successful
     global total
     print(fn)
     tests_num, successful_ = len(expecteds), 0
     
     for inp, exp in zip(inputs, expecteds):
-        res = sp.run([binary_path, tests_folder + "/" + fn], stdout=sp.PIPE, input=bytes(inp, "UTF-8")).stdout
+        command = [binary_path, "-t" if threaded else "", tests_folder + "/" + fn]
+        res = sp.run(command, stdout=sp.PIPE, input=bytes(inp, "UTF-8")).stdout
         outcome = func(res, exp)
         if outcome: successful_ += 1
         print("\tInput:{} \t--->\tResult:{}".format(inp, res), end="\t")
@@ -95,7 +96,7 @@ for fn in sorted(os.listdir(tests_folder)):
     elif fn == "11-multithread.bf93":
         inputs = [""]
         outputs = ["3 4 5 6 "]
-        test(fn, inputs, outputs)
+        test(fn, inputs, outputs, threaded=True)
     else:
         print(fn)
         print("\tNo test aviable.")

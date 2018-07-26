@@ -1,11 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "state.h"
 #include "datastruct.h"
 #include "parse.h"
 
-void exec(int debugMode);
+void exec(int debugMode, int threadedMode);
 unsigned char * move(char dir, unsigned char *ip);
 
 Stack * stacks;
@@ -20,27 +21,31 @@ enum direction {
 };
     
 int main(int argv, char** argc) {
-    /* argc[0]  ->  befunge93
-     * argc[1] if argn==3  ->  debug mode
-     * argc[1] if argn==2  ->  filename
-     * argc[2] if argn==3  ->  filename     */
-    
-    if (argv == 1 || argv > 3) {
+    if (argv == 1 || argv > 4) {
         printf("bff93 - a befunge93 interpreter\n\n");
         printf("Syntax:\n");
-        printf("\tbff93 <opt: debug> path/to/file\n");
+        printf("\tbff93 -vt filename\n");
         printf("\n");
         printf("Usage:\n");
-        printf("\t- without the debug flag, bff93 runs the .bf93 file as it is.\n");
-        printf("\t- if debug != 0, <filename>.bf93's trace is sent to stdout.\n");
-        printf("\t- bff93 with no arguments prints this text.\n");
+        printf("\t-v sets the verbosity to 1 (the maximum);\n");
+        printf("\t   if -v is enabled, <filename>.bf93's trace is sent to stdout,\n");
+        printf("\t   otherwise it runs with outputting any uneeded information.\n");
+        printf("\t-t enables execution of threaded bf93 code;\n");
+        printf("\t   use -t when your code has the branching ({) instruction.\n");
+        printf("\tbff93 with no arguments prints this text.\n");
         exit(-1);
     }
 
-    int filenameIdx = (argv == 2) ? 1 : 2;
-    int debugMode   = (argv == 3) ? *argc[1] - 48 : 0;
+    // Interpretation of command line arguments
+    int debugMode = 0, threadedMode = 0;
+    for (int i=1; i<argv; i++) {
+        if (!strcmp(argc[i], "-t"))
+            threadedMode = 1;
+        if (!strcmp(argc[i], "-v"))
+            debugMode = 1;
+    }
     
-    FILE * fileSrc = fopen(argc[filenameIdx], "rb");
+    FILE * fileSrc = fopen(argc[argv-1], "rb");
     if (fileSrc == NULL) {
         printf("File not found. Exiting...");
         exit(-1); 
@@ -49,10 +54,10 @@ int main(int argv, char** argc) {
     parse(fileSrc);
 
     srand(time(&t));  // for the RNG
-    exec(debugMode);
+    exec(debugMode, threadedMode);
 }
 
-void exec(int debugMode) {
+void exec(int debugMode, int threadedMode) {
     int numThreads = 1;
 
     // Linked list ordinata con l'ordine di esecuzione dei thread
@@ -147,6 +152,8 @@ void exec(int debugMode) {
                     dirs[thread] = rand() % 4;   // Giusto
                     break;
                 case '{':
+                    if (!threadedMode) continue;
+                    
                     numThreads++;
                     ips = realloc(ips, numThreads * sizeof(unsigned char *));
                     stacks = realloc(stacks, numThreads * sizeof(Stack));
@@ -235,6 +242,8 @@ void exec(int debugMode) {
 
                 
                 case '@':
+                    if (!threadedMode) return;
+                    
                     numThreads--;
                     if (numThreads == 0) return;
 
