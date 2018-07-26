@@ -54,7 +54,7 @@ Supposing that the initial thread ID is 0, the order of execution through the pr
     | | |\
     0 2 1 3
 
-When a thread reaches @ it is terminated. When every thread as reached a @ the program is halted.
+When a thread reaches `@` it is terminated. When every thread has reached a `@` the program is halted.
 
 Note that executing normal bf93 source code with `bf93 -t` should not be a problem unless, of course, there are `{` floating around (in bf93 they would be interpreted as simple comments and ignored). It is not true the other way round: executing parallelized bf93 code without the `-t` flag will probably cause your program to loop.
 
