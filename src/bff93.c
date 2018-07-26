@@ -164,9 +164,9 @@ void exec(int debugMode) {
 
                     ips[thread] = move(UP, ips[thread]);
 
-                    updateIp = 0;
+                    //updateIp = 0;
 
-                    break;
+                    continue;
                     
                 case '_':
                     c1 = stackPop(stacks[thread]);
@@ -257,6 +257,7 @@ void exec(int debugMode) {
             if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
         }
 
+        // Mark all threads as executable in the next turn 
         for (int t=0; t<numThreads; t++)
             if (canGos[t] != -1) canGos[t] = 1;
         turn++;
