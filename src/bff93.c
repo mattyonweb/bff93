@@ -55,37 +55,47 @@ int main(int argv, char** argc) {
 void exec(int debugMode) {
     int numThreads = 1;
 
+    // Linked list ordinata con l'ordine di esecuzione dei thread
     Node orderExecution = nodeInit(0);
-    
+
+    // Gli Instruction Pointer per ogni thread
     unsigned char ** ips = calloc(numThreads, sizeof(unsigned char *));
     ips[0] = memory;
-    
+
+    // Le direzioni di ogni thread
     char * dirs = calloc(numThreads, sizeof(char));
     dirs[0] = RIGHT;
-    
+
+    // Stack per threads
     stacks = calloc(numThreads, sizeof(Stack));
     stacks[0] = stackInit();
 
+    // Array di bool; dicono se il thread n-esimo può essere eseguito in questo turno
+    char * canGos = calloc(numThreads, sizeof(char));
+    canGos[0] = 1;
 
-    if (debugMode)  printf("tid\tip\tout\tstack\n");
+    
+    if (debugMode)  printf("turn\ttid\tip\tout\tstack\n");
     
     unsigned char c1, c2, c3;
     char * string;
     char updateIp = 1;
+    int turn = 0;
     
     while (1) {
-        int threadExecuted = 0;
-        int threadToExecute = numThreads;
-
-        for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
-            if (threadExecuted >= numThreads) continue; //per gestire la fine di un thread in questo turno
-            //if (threadToExecute < numThreads && threadExecuted >= threadToExecute) continue; 
-            
+        
+        for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {         
             int thread = threadId -> val;
-            if (thread > threadToExecute-1) continue;
+
+            // Non esegui i thread nati in questo turno
+            if (!canGos[thread]) continue;
+            
+            // Non esegui dei thread morti in questo turno
+            if (!linkedFind(orderExecution, thread)) continue;
+            
             updateIp = 1;
-                
-            if (debugMode) printf("%d\t%c\t", thread, *ips[thread]);
+                        
+            if (debugMode) printf("%d\t%d\t%c\t", turn, thread, *ips[thread]);
             
             switch (*ips[thread]) {
                 case '+':
@@ -141,7 +151,8 @@ void exec(int debugMode) {
                     ips = realloc(ips, numThreads * sizeof(unsigned char *));
                     stacks = realloc(stacks, numThreads * sizeof(Stack));
                     dirs = realloc(dirs, numThreads * sizeof(char));
-
+                    canGos = realloc(canGos, numThreads * sizeof(char));
+                    
                     linkedExpand(orderExecution, thread, numThreads-1); //giusto se messo proprio qui?
 
                     ips[numThreads-1] = move(DOWN, ips[thread]);    //copia 1:1 di ips[thread],
@@ -149,6 +160,7 @@ void exec(int debugMode) {
                     stacks[numThreads-1] = malloc(sizeof(Stack));
                     stacks[numThreads-1] = stackCopy(stacks[thread]);
                     dirs[numThreads-1] = RIGHT;
+                    canGos[numThreads-1] = 0;
 
                     ips[thread] = move(UP, ips[thread]);
 
@@ -225,20 +237,16 @@ void exec(int debugMode) {
                 case '@':
                     numThreads--;
                     if (numThreads == 0) return;
-                    
-                    ips = realloc(ips, numThreads * sizeof(unsigned char *));
-                    stacks = realloc(stacks, numThreads * sizeof(Stack));
-                    dirs = realloc(dirs, numThreads * sizeof(char));
 
                     linkedRemove(orderExecution, thread);
                     
-                    //ips[thread] = NULL;
-                    //free(stacks[thread]);
-                    //dirs[thread] = -1;
+                    ips[thread] = NULL;
+                    free(stacks[thread]);
+                    stacks[thread] = NULL;
+                    dirs[thread] = -1;
+                    canGos[thread] = -1;
 
-                    //return;
-                    updateIp = 0;
-                    break;
+                    continue;
 
                 case '0' ... '9':
                     stackPush(stacks[thread], *ips[thread] - 48);
@@ -247,9 +255,11 @@ void exec(int debugMode) {
 
             if (debugMode) stackPrint(stacks[thread]);
             if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
-            threadExecuted++;
         }
 
+        for (int t=0; t<numThreads; t++)
+            if (canGos[t] != -1) canGos[t] = 1;
+        turn++;
     }
 }
 

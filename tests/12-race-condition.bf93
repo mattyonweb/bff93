@@ -5,8 +5,7 @@ v       ,+91  <  ^
 > 010p 020p 030p {          > 30g 20g 10g . . . 91+, @
   sum  idx1 idx2 v
                  > 30g"@"\-!|
-                            > 10g 1+ 10p v
-                 ^            p03 +1 g03 <
-
-Race condition example. Just space out a bit one of the thread and the sum
-will not be the one expected (64+64=128)
+Race condition example.     > 10g 1+ 10p v
+If you space out ^            p03 +1 g03 <
+a bit one's thread code the sum will vary accordingly,
+rarely being the correct one (64+64=128).

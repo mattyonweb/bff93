@@ -23,4 +23,5 @@ void stackPrint(Stack s);
 void linkedExpand(Node root, int elem, int newElem);
 void linkedPrint(Node root);
 void linkedRemove(Node root, int elem);
+char linkedFind(Node root, int v);
 #endif

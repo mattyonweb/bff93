@@ -92,6 +92,10 @@ for fn in sorted(os.listdir(tests_folder)):
             return expected == out
 
         test(fn, inputs, outputs, extract_func)
+    elif fn == "11-multithread.bf93":
+        inputs = [""]
+        outputs = ["3 4 5 6 "]
+        test(fn, inputs, outputs)
     else:
         print(fn)
         print("\tNo test aviable.")

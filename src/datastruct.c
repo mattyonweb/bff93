@@ -74,7 +74,7 @@ void linkedExpand(Node root, int elem, int newElem) {
 
 void linkedRemove(Node root, int elem) {
     if (root -> val == elem) {      // BUG: non sono mica sicuro che questo modifichi root...
-        root = root -> next;
+        *root = *(root -> next);
         return;
     }
     
@@ -89,4 +89,11 @@ void linkedRemove(Node root, int elem) {
 void linkedPrint(Node root) {
     for (Node n=root; n!=NULL; n=n->next) printf("%d,", n->val);
     printf("\n");
+}
+
+char linkedFind(Node root, int v) {
+    for (Node n=root; n!=NULL; n=n->next) {
+        if (n -> val == v) return 1;
+    }
+    return 0;
 }
