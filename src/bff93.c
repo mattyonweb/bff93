@@ -47,7 +47,7 @@ int main(int argv, char** argc) {
     if (argv == 1 || argv > 5) {
         printf("bff93 - a befunge93 interpreter\n\n");
         printf("Syntax:\n");
-        printf("\tbff93 -vt filename\n");
+        printf("\tbff93 {-v} {-t} {-b} filename\n");
         printf("\n");
         printf("Usage:\n");
         printf("\t-v  sets the verbosity to 1 (the maximum);\n");
@@ -55,9 +55,10 @@ int main(int argv, char** argc) {
         printf("\t    otherwise it runs with outputting any uneeded information.\n");
         printf("\t-t  enables execution of threaded bf93 code;\n");
         printf("\t    use -t when your code has the branching ({) instruction.\n");
-        printf("\t-ub <bits> tells the interpreter the size in bits of the cells.\n");
-        printf("\t    default is 8; maximum is 32. Cells values are always unsigned.\n");
-        printf("\tbff93 with no arguments prints this text.\n");
+        printf("\t-b  <bits> tells the interpreter the size in bits of the cells.\n");
+        printf("\t    default is 8; maximum is 32. Cells values are always signed.\n");
+        printf("\n");
+        printf("\tbff93 with no arguments prints this text.\n\n");
         exit(-1);
     }
 
@@ -68,7 +69,7 @@ int main(int argv, char** argc) {
             threadedMode = 1;
         if (!strcmp(argc[i], "-v"))
             debugMode = 1;
-        if (!strcmp(argc[i], "-ub")) {
+        if (!strcmp(argc[i], "-b")) {
             bits = atoi(argc[i+1]);
             bits = bits >= 32 ? 31 : bits;
             i++;
@@ -127,30 +128,31 @@ void exec(int debugMode, int threadedMode, int bits) {
                         
             if (debugMode) printf("%d\t%d\t%c\t%d\t%d\t%d\t", turn, thread->id, *(thread -> ip), thread->dir, thread->mail, thread->waitFor);
             
-            if (thread -> state == WAITING) {
+            // If the thread is WAITING, check if it can be unlocked
+            if (threadedMode && thread -> state == WAITING) {
                 if (thread -> mail == thread -> waitFor) {
                     thread -> state = READY;
-                    stackPush(thread -> stack, thread -> waitFor);
+                    //stackPush(thread -> stack, thread -> waitFor); //il messaggio ricevuto NON viene pushato sullo stack
                     thread -> ip = move(thread -> dir, thread -> ip);
                 }
-                printf("\n");
+                if (debugMode) printf("\n");
                 continue;
             }
             switch (*(thread -> ip)) {
                 case '+':
                     c1 = stackPop(thread -> stack);
                     c2 = stackPop(thread -> stack);
-                    stackPush(thread -> stack, (c1+c2) % maxSize);
+                    stackPush(thread -> stack, c1+c2 % maxSize);
                     break;
                 case '-':
                     c1 = stackPop(thread -> stack);
                     c2 = stackPop(thread -> stack);
-                    stackPush(thread -> stack, (c2-c1) % maxSize);
+                    stackPush(thread -> stack, c2-c1 % maxSize);
                     break;
                 case '*':
                     c1 = stackPop(thread -> stack);
                     c2 = stackPop(thread -> stack);
-                    stackPush(thread -> stack, (c1*c2) % maxSize);
+                    stackPush(thread -> stack, c1*c2 % maxSize);
                     break;
                 case '/':
                     c1 = stackPop(thread -> stack);
@@ -158,12 +160,12 @@ void exec(int debugMode, int threadedMode, int bits) {
                     if (c1 == 0)
                         stackPush(thread -> stack, 0); //undefined behaviour
                     else
-                        stackPush(thread -> stack, (c2 / c1) % maxSize); // necessario il maxSize?
+                        stackPush(thread -> stack, c2/c1 % maxSize);
                     break;
                 case '%':
                     c1 = stackPop(thread -> stack);
                     c2 = stackPop(thread -> stack);
-                    stackPush(thread -> stack, (c2 % c1) % maxSize); //ordine giusto?
+                    stackPush(thread -> stack, c2%c1);
                     break;
 
                 case '!':
@@ -208,14 +210,16 @@ void exec(int debugMode, int threadedMode, int bits) {
                     continue;
                     
                 case 'w':
-                    //if (thread -> state == WAITING) continue;
+                    if (!threadedMode) continue;
                     
                     c1 = stackPop(thread -> stack);
                     thread -> waitFor = c1;
                     thread -> state = WAITING;
-                    printf("\n");
+                    if (debugMode) printf("\n");
                     continue;
                 case 's':
+                    if (!threadedMode) continue;
+                    
                     c1 = stackPop(thread -> stack);
                     for (int t=0; t<numThreads; t++)
                         threads[t] -> mail = c1;
@@ -274,14 +278,14 @@ void exec(int debugMode, int threadedMode, int bits) {
                     c1 = stackPop(thread -> stack);
                     c2 = stackPop(thread -> stack);
                     c3 = stackPop(thread -> stack);
-                    CELL(c2, c1) = c3;
+                    CELL(c2, c1) = c3; //WRAP(c3,maxSize);
                     break;
 
                 case '&':
                     string = calloc(maxSize + 1, sizeof(char)); // + 1 giusto? (32 bit + bit terminazione)
                     fgets(string, maxSize + 1, stdin);
                     
-                    stackPush(thread -> stack, atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                    stackPush(thread -> stack, WRAP(atoi(string),maxSize)); //Mah mah mah (ALTA PROBABILIYA BUG)
                     free(string);
                     break;
                 case '~':

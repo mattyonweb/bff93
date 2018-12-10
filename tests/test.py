@@ -115,10 +115,11 @@ for fn in sorted(os.listdir(tests_folder)):
   * *     * *     * *     * *  
  *   *   *   *   *   *   *   * 
 * * * * * * * * * * * * * * * *\n"""]
+        test(fn, inputs, outputs)
+    elif fn == "14-message-basic.bf93":
+        inputs = [""]
+        outputs = ["1 9 "]
         test(fn, inputs, outputs, threaded=True)
-    else:
-        print(fn)
-        print("\tNo test aviable.")
-        print()
+
 
 print("Total: {}/{} - {}%".format(successful, total, 100 * successful / total))
