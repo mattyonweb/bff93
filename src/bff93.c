@@ -12,6 +12,7 @@ typedef struct {
     char dir;
     Stack stack;
     int mail;
+    int waitFor;
     int state;
 } Thread;
 
@@ -22,6 +23,7 @@ Thread * createThread(int pid, int* ip, char dir, Stack stack, int mail, int sta
     thread -> dir = dir;
     thread -> stack = stack;
     thread -> mail = mail;
+    thread -> waitFor = -1;
     thread -> state = state;
     
     return thread;
@@ -101,7 +103,7 @@ void exec(int debugMode, int threadedMode, int bits) {
     Node orderExecution = nodeInit(0);
 
     
-    if (debugMode)  printf("turn\ttid\tip\tdir\tout\tstack\n");
+    if (debugMode)  printf("turn\ttid\tip\tdir\tmail\tw4\tout\tstack\n");
     
     int c1, c2, c3;
     char * string;
@@ -114,7 +116,7 @@ void exec(int debugMode, int threadedMode, int bits) {
         for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
             // Il thread che viene eseguito ora      
             thread = threads[threadId -> val];
-
+            
             // Non esegui i thread nati in questo turno
             if (thread -> state == READY) continue;
             
@@ -123,8 +125,17 @@ void exec(int debugMode, int threadedMode, int bits) {
             
             updateIp = 1;
                         
-            if (debugMode) printf("%d\t%d\t%c\t%d\t", turn, thread->id, *(thread -> ip), thread->dir);
+            if (debugMode) printf("%d\t%d\t%c\t%d\t%d\t%d\t", turn, thread->id, *(thread -> ip), thread->dir, thread->mail, thread->waitFor);
             
+            if (thread -> state == WAITING) {
+                if (thread -> mail == thread -> waitFor) {
+                    thread -> state = READY;
+                    stackPush(thread -> stack, thread -> waitFor);
+                    thread -> ip = move(thread -> dir, thread -> ip);
+                }
+                printf("\n");
+                continue;
+            }
             switch (*(thread -> ip)) {
                 case '+':
                     c1 = stackPop(thread -> stack);
@@ -196,9 +207,20 @@ void exec(int debugMode, int threadedMode, int bits) {
 
                     continue;
                     
-                //case 'w':
-                    //c1 = stackPop(stacks[thread]);
+                case 'w':
+                    //if (thread -> state == WAITING) continue;
                     
+                    c1 = stackPop(thread -> stack);
+                    thread -> waitFor = c1;
+                    thread -> state = WAITING;
+                    printf("\n");
+                    continue;
+                case 's':
+                    c1 = stackPop(thread -> stack);
+                    for (int t=0; t<numThreads; t++)
+                        threads[t] -> mail = c1;
+                    break;
+
                 case '_':
                     c1 = stackPop(thread -> stack);
                     (c1 == 0) ? (thread -> dir = RIGHT) : (thread -> dir = LEFT);
@@ -264,7 +286,7 @@ void exec(int debugMode, int threadedMode, int bits) {
                     break;
                 case '~':
                     c1 = getchar();
-                    stackPush(thread -> stack, c1); //Mah mah mah
+                    stackPush(thread -> stack, c1);
                     break;
 
                 
@@ -296,7 +318,7 @@ void exec(int debugMode, int threadedMode, int bits) {
 
         // Mark all threads as executable in the next turn 
         for (int t=0; t<numThreads; t++) {
-            if (threads[t] -> state != KILLED) 
+            if (threads[t] -> state == READY) 
                 threads[t] -> state = RUNNING;
         }
         turn++;
