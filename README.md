@@ -7,7 +7,7 @@ A simple but strict befunge93 interpreter written in C, now with added support f
 Some notes:
 - The interpreter implements an extension of standard bf93: support for the `{` thread branching instruction is toggled with the `-t` flag. More on this below.
 - The interpreter may have bugs.
-- Every cell has dimension of `sizeof(unsigned char)`, usually 1 byte; every value stored has to be considered modulo maxValue, usually 255.
+- Every cell has a default dimension of `sizeof(unsigned char)`, usually 1 byte; in case of overflow, the value of a cell will wrap back to 0. It's possible to change the dimension of the cells by using the flag `-ub <bits num>`, with a maximum of 32 bits. Cells values are always unsigned.
 - It will probably not work with sources written in befunge98.
 - In the directory `utils` you'll find a funny python script which converts the files in the `tests` directory into mondrian-esque pictures. The script is very hacky but should work; requires `PIL` and `python3`.   
 
