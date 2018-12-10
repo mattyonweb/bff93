@@ -9,20 +9,18 @@
 typedef struct {
     int id;
     int * ip;
-    int canGo;
     char dir;
     Stack stack;
     int mail;
     int state;
 } Thread;
 
-Thread * createThread(int pid, int* ip, int canGo, char dir, Stack stack, int mail, int state) {
+Thread * createThread(int pid, int* ip, char dir, Stack stack, int mail, int state) {
     Thread * thread = malloc(sizeof(Thread));
     thread -> id = pid;
-    thread -> ip = ip; //??????
-    thread -> canGo = canGo;
+    thread -> ip = ip;
     thread -> dir = dir;
-    thread -> stack = stack; //???????????
+    thread -> stack = stack;
     thread -> mail = mail;
     thread -> state = state;
     
@@ -90,36 +88,17 @@ int main(int argv, char** argc) {
 
 
 void exec(int debugMode, int threadedMode, int bits) {
+    // Maximum value possible in a cell
     int maxSize = 2 << (bits - 1);
-    
-    int numThreads = 1;
 
+    // Array of threads struct and initialization of the root thread
+    int numThreads = 1;
+    
     Thread ** threads = calloc(numThreads, sizeof(Thread *));
-    threads[0] = createThread(0, memory, 1, RIGHT,  stackInit(), -1, RUNNING);
+    threads[0] = createThread(0, memory, RIGHT,  stackInit(), -1, RUNNING);
     
     // Linked list ordinata con l'ordine di esecuzione dei thread
     Node orderExecution = nodeInit(0);
-
-    // Gli Instruction Pointer per ogni thread
-    //int ** ips = calloc(numThreads, sizeof(int *));
-    //ips[0] = memory;
-
-    // Le direzioni di ogni thread
-    //char * dirs = calloc(numThreads, sizeof(char));
-    //dirs[0] = RIGHT;
-
-    // Stack per threads
-    //stacks = calloc(numThreads, sizeof(Stack));
-    //stacks[0] = stackInit();
-
-    //int * mails = calloc(numThreads, sizeof(int));
-    //int * states = calloc(numThreads, sizeof(int));
-    //mails[0] = 0;
-    //states[0] = RUNNING;
-    
-    // Array di bool; dicono se il thread n-esimo può essere eseguito in questo turno
-    //char * canGos = calloc(numThreads, sizeof(char));
-    //canGos[0] = 1;
 
     
     if (debugMode)  printf("turn\ttid\tip\tdir\tout\tstack\n");
@@ -135,12 +114,9 @@ void exec(int debugMode, int threadedMode, int bits) {
         for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
             // Il thread che viene eseguito ora      
             thread = threads[threadId -> val];
-            
-            // Non eseguire thread morti
-            //if (thread == NULL) continue;
 
             // Non esegui i thread nati in questo turno
-            if (!(thread -> canGo)) continue;
+            if (thread -> state == READY) continue;
             
             // Non esegui dei thread morti in questo turno
             if (!linkedFind(orderExecution, thread -> id)) continue;
@@ -214,7 +190,7 @@ void exec(int debugMode, int threadedMode, int bits) {
                     
                     threads = realloc(threads, numThreads * sizeof(Thread *));
                     threads[numThreads-1] = createThread(numThreads-1, move(DOWN, thread -> ip), 
-                                                         0, RIGHT, stackCopy(thread -> stack), -1, RUNNING);
+                                                         RIGHT, stackCopy(thread -> stack), -1, READY);
 
                     thread -> ip = move(UP, thread -> ip);
 
@@ -300,13 +276,10 @@ void exec(int debugMode, int threadedMode, int bits) {
 
                     linkedRemove(orderExecution, threadId -> val);
                     
-                    //threads[threadId -> val] = NULL;
-                    //free(threads[threadId -> val]);
                     thread -> ip = NULL;
                     free(thread -> stack);
                     thread -> stack = NULL;
                     thread -> dir = -1;
-                    thread -> canGo = -1;
                     thread -> mail = -1;
                     thread -> state = KILLED;
 
@@ -323,8 +296,8 @@ void exec(int debugMode, int threadedMode, int bits) {
 
         // Mark all threads as executable in the next turn 
         for (int t=0; t<numThreads; t++) {
-            if (threads[t] -> canGo != -1) 
-                threads[t] -> canGo = 1;
+            if (threads[t] -> state != KILLED) 
+                threads[t] -> state = RUNNING;
         }
         turn++;
         
