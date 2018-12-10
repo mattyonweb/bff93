@@ -31,8 +31,7 @@ Thread * createThread(int pid, int* ip, char dir, Stack stack, int mail, int sta
 
 void exec(int debugMode, int threadedMode, int bits);
 int * move(char dir, int *ip);
-
-Stack * stacks;
+char rotate(char dir, char angle);
 
 time_t t;
 
@@ -132,7 +131,6 @@ void exec(int debugMode, int threadedMode, int bits) {
             if (threadedMode && thread -> state == WAITING) {
                 if (thread -> mail == thread -> waitFor) {
                     thread -> state = READY;
-                    //stackPush(thread -> stack, thread -> waitFor); //il messaggio ricevuto NON viene pushato sullo stack
                     thread -> ip = move(thread -> dir, thread -> ip);
                 }
                 if (debugMode) printf("\n");
@@ -202,10 +200,10 @@ void exec(int debugMode, int threadedMode, int bits) {
                     
                     
                     threads = realloc(threads, numThreads * sizeof(Thread *));
-                    threads[numThreads-1] = createThread(numThreads-1, move(DOWN, thread -> ip), 
+                    threads[numThreads-1] = createThread(numThreads-1, move(rotate(thread->dir,1), thread -> ip), 
                                                          RIGHT, stackCopy(thread -> stack), -1, READY);
 
-                    thread -> ip = move(UP, thread -> ip);
+                    thread -> ip = move(rotate(thread->dir,-1), thread -> ip);
 
                     continue;
                     
@@ -358,5 +356,14 @@ int * move (char dir, int *ip) {
         default:
             printf("ERROR");
             exit(-1);
+    }
+}
+
+char rotate(char dir, char angle) {
+    switch(dir) {
+        case(RIGHT): return angle == -1 ? UP : DOWN;
+        case(LEFT) : return angle == -1 ? DOWN : UP;
+        case(UP)   : return angle == -1 ? LEFT : RIGHT;  
+        case(DOWN)   : return angle == -1 ? RIGHT : LEFT;  
     }
 }
