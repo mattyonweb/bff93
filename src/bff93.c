@@ -6,8 +6,8 @@
 #include "datastruct.h"
 #include "parse.h"
 
-void exec(int debugMode, int threadedMode);
-unsigned char * move(char dir, unsigned char *ip);
+void exec(int debugMode, int threadedMode, int bits);
+int * move(char dir, int *ip);
 
 Stack * stacks;
 
@@ -21,28 +21,35 @@ enum direction {
 };
     
 int main(int argv, char** argc) {
-    if (argv == 1 || argv > 4) {
+    if (argv == 1 || argv > 5) {
         printf("bff93 - a befunge93 interpreter\n\n");
         printf("Syntax:\n");
         printf("\tbff93 -vt filename\n");
         printf("\n");
         printf("Usage:\n");
-        printf("\t-v sets the verbosity to 1 (the maximum);\n");
-        printf("\t   if -v is enabled, <filename>.bf93's trace is sent to stdout,\n");
-        printf("\t   otherwise it runs with outputting any uneeded information.\n");
-        printf("\t-t enables execution of threaded bf93 code;\n");
-        printf("\t   use -t when your code has the branching ({) instruction.\n");
+        printf("\t-v  sets the verbosity to 1 (the maximum);\n");
+        printf("\t    if -v is enabled, <filename>.bf93's trace is sent to stdout,\n");
+        printf("\t    otherwise it runs with outputting any uneeded information.\n");
+        printf("\t-t  enables execution of threaded bf93 code;\n");
+        printf("\t    use -t when your code has the branching ({) instruction.\n");
+        printf("\t-ub <bits> tells the interpreter the size in bits of the cells.\n");
+        printf("\t    default is 8; maximum is 32. Cells values are always unsigned.\n");
         printf("\tbff93 with no arguments prints this text.\n");
         exit(-1);
     }
 
     // Interpretation of command line arguments
-    int debugMode = 0, threadedMode = 0;
+    int debugMode = 0, threadedMode = 0, bits=8;
     for (int i=1; i<argv; i++) {
         if (!strcmp(argc[i], "-t"))
             threadedMode = 1;
         if (!strcmp(argc[i], "-v"))
             debugMode = 1;
+        if (!strcmp(argc[i], "-ub")) {
+            bits = atoi(argc[i+1]);
+            bits = bits >= 32 ? 31 : bits;
+            i++;
+        }
     }
     
     FILE * fileSrc = fopen(argc[argv-1], "rb");
@@ -54,17 +61,19 @@ int main(int argv, char** argc) {
     parse(fileSrc);
 
     srand(time(&t));  // for the RNG
-    exec(debugMode, threadedMode);
+    exec(debugMode, threadedMode, bits);
 }
 
-void exec(int debugMode, int threadedMode) {
+void exec(int debugMode, int threadedMode, int bits) {
+    int maxSize = 2 << (bits - 1);
+    
     int numThreads = 1;
 
     // Linked list ordinata con l'ordine di esecuzione dei thread
     Node orderExecution = nodeInit(0);
 
     // Gli Instruction Pointer per ogni thread
-    unsigned char ** ips = calloc(numThreads, sizeof(unsigned char *));
+    int ** ips = calloc(numThreads, sizeof(int *));
     ips[0] = memory;
 
     // Le direzioni di ogni thread
@@ -82,7 +91,7 @@ void exec(int debugMode, int threadedMode) {
     
     if (debugMode)  printf("turn\ttid\tip\tout\tstack\n");
     
-    unsigned char c1, c2, c3;
+    int c1, c2, c3;
     char * string;
     char updateIp = 1;
     int turn = 0;
@@ -105,26 +114,26 @@ void exec(int debugMode, int threadedMode) {
             switch (*ips[thread]) {
                 case '+':
                     c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c1+c2);
+                    stackPush(stacks[thread], (c1+c2) % maxSize);
                     break;
                 case '-':
                     c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c2-c1);
+                    stackPush(stacks[thread], (c2-c1) % maxSize);
                     break;
                 case '*':
                     c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c1*c2);
+                    stackPush(stacks[thread], (c1*c2) % maxSize);
                     break;
                 case '/':
                     c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
                     if (c1 == 0)
                         stackPush(stacks[thread], 0); //undefined behaviour
                     else
-                        stackPush(stacks[thread], c2 / c1);
+                        stackPush(stacks[thread], (c2 / c1) % maxSize); // necessario il maxSize?
                     break;
                 case '%':
                     c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c2 % c1); //ordine giusto?
+                    stackPush(stacks[thread], (c2 % c1) % maxSize); //ordine giusto?
                     break;
 
                 case '!':
@@ -155,7 +164,7 @@ void exec(int debugMode, int threadedMode) {
                     if (!threadedMode) continue;
                     
                     numThreads++;
-                    ips = realloc(ips, numThreads * sizeof(unsigned char *));
+                    ips = realloc(ips, numThreads * sizeof(int *));
                     stacks = realloc(stacks, numThreads * sizeof(Stack));
                     dirs = realloc(dirs, numThreads * sizeof(char));
                     canGos = realloc(canGos, numThreads * sizeof(char));
@@ -229,8 +238,8 @@ void exec(int debugMode, int threadedMode) {
                     break;
 
                 case '&':
-                    string = calloc(4, sizeof(char));
-                    fgets(string, 4, stdin);
+                    string = calloc(maxSize + 1, sizeof(char)); // + 1 giusto? (32 bit + bit terminazione)
+                    fgets(string, maxSize + 1, stdin);
                     
                     stackPush(stacks[thread], atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
                     free(string);
@@ -273,7 +282,7 @@ void exec(int debugMode, int threadedMode) {
     }
 }
 
-unsigned char * move (char dir, unsigned char *ip) {
+int * move (char dir, int *ip) {
     int pos = ip - memory;
     switch(dir) {
         case UP:

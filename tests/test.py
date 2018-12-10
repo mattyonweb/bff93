@@ -97,6 +97,25 @@ for fn in sorted(os.listdir(tests_folder)):
         inputs = [""]
         outputs = ["3 4 5 6 "]
         test(fn, inputs, outputs, threaded=True)
+    elif fn == "13-sierpinsky.bf93":
+        inputs = [""]
+        outputs = ["""               *               
+              * *              
+             *   *             
+            * * * *            
+           *       *           
+          * *     * *          
+         *   *   *   *         
+        * * * * * * * *        
+       *               *       
+      * *             * *      
+     *   *           *   *     
+    * * * *         * * * *    
+   *       *       *       *   
+  * *     * *     * *     * *  
+ *   *   *   *   *   *   *   * 
+* * * * * * * * * * * * * * * *\n"""]
+        test(fn, inputs, outputs, threaded=True)
     else:
         print(fn)
         print("\tNo test aviable.")
