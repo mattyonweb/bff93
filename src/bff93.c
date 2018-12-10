@@ -132,15 +132,18 @@ void exec(int debugMode, int threadedMode, int bits) {
     
     while (1) {
         
-        for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {         
-            //int thread = threadId -> val;
+        for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {
+            // Il thread che viene eseguito ora      
             thread = threads[threadId -> val];
+            
+            // Non eseguire thread morti
+            //if (thread == NULL) continue;
 
             // Non esegui i thread nati in questo turno
             if (!(thread -> canGo)) continue;
             
             // Non esegui dei thread morti in questo turno
-            if (!linkedFind(orderExecution, thread -> id)) continue; /////MMMMMH BUG?!?!
+            if (!linkedFind(orderExecution, thread -> id)) continue;
             
             updateIp = 1;
                         
@@ -171,7 +174,8 @@ void exec(int debugMode, int threadedMode, int bits) {
                         stackPush(thread -> stack, (c2 / c1) % maxSize); // necessario il maxSize?
                     break;
                 case '%':
-                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
                     stackPush(thread -> stack, (c2 % c1) % maxSize); //ordine giusto?
                     break;
 
@@ -180,7 +184,8 @@ void exec(int debugMode, int threadedMode, int bits) {
                     (c1 == 0) ? stackPush(thread -> stack, 1) : stackPush(thread -> stack, 0);
                     break;
                 case '`':
-                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
                     (c2 > c1) ? stackPush(thread -> stack, 1) : stackPush(thread -> stack, 0);
                     break;
                     
@@ -197,22 +202,21 @@ void exec(int debugMode, int threadedMode, int bits) {
                     thread -> dir = DOWN;
                     break;
                 case '?':
-                    thread -> dir = rand() % 4;   // Giusto
+                    thread -> dir = rand() % 4;
                     break;
                 case '{':
                     if (!threadedMode) continue;
                     
                     numThreads++;
                     
-                    linkedExpand(orderExecution, thread -> id, numThreads-1); //giusto se messo proprio qui?
-
+                    linkedExpand(orderExecution, thread -> id, numThreads-1); 
+                    
+                    
                     threads = realloc(threads, numThreads * sizeof(Thread *));
                     threads[numThreads-1] = createThread(numThreads-1, move(DOWN, thread -> ip), 
                                                          0, RIGHT, stackCopy(thread -> stack), -1, RUNNING);
 
                     thread -> ip = move(UP, thread -> ip);
-
-                    //updateIp = 0;
 
                     continue;
                     
@@ -261,14 +265,17 @@ void exec(int debugMode, int threadedMode, int bits) {
                     break;
 
                 case 'g':
-                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
                     if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
                         stackPush(thread -> stack, 0);
                     else
                         stackPush(thread -> stack, CELL(c2, c1));
                     break;
                 case 'p':
-                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack), c3 = stackPop(thread -> stack);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
+                    c3 = stackPop(thread -> stack);
                     CELL(c2, c1) = c3;
                     break;
 
@@ -293,6 +300,7 @@ void exec(int debugMode, int threadedMode, int bits) {
 
                     linkedRemove(orderExecution, threadId -> val);
                     
+                    //threads[threadId -> val] = NULL;
                     //free(threads[threadId -> val]);
                     thread -> ip = NULL;
                     free(thread -> stack);
