@@ -279,6 +279,9 @@ void exec(int debugMode, int threadedMode, int bits) {
         for (int t=0; t<numThreads; t++)
             if (canGos[t] != -1) canGos[t] = 1;
         turn++;
+        
+        if (debugMode)
+            getchar();
     }
 }
 
