@@ -6,6 +6,29 @@
 #include "datastruct.h"
 #include "parse.h"
 
+typedef struct {
+    int id;
+    int * ip;
+    int canGo;
+    char dir;
+    Stack stack;
+    int mail;
+    int state;
+} Thread;
+
+Thread * createThread(int pid, int* ip, int canGo, char dir, Stack stack, int mail, int state) {
+    Thread * thread = malloc(sizeof(Thread));
+    thread -> id = pid;
+    thread -> ip = ip; //??????
+    thread -> canGo = canGo;
+    thread -> dir = dir;
+    thread -> stack = stack; //???????????
+    thread -> mail = mail;
+    thread -> state = state;
+    
+    return thread;
+}
+
 void exec(int debugMode, int threadedMode, int bits);
 int * move(char dir, int *ip);
 
@@ -64,176 +87,188 @@ int main(int argv, char** argc) {
     exec(debugMode, threadedMode, bits);
 }
 
+
+
 void exec(int debugMode, int threadedMode, int bits) {
     int maxSize = 2 << (bits - 1);
     
     int numThreads = 1;
 
+    Thread ** threads = calloc(numThreads, sizeof(Thread *));
+    threads[0] = createThread(0, memory, 1, RIGHT,  stackInit(), -1, RUNNING);
+    
     // Linked list ordinata con l'ordine di esecuzione dei thread
     Node orderExecution = nodeInit(0);
 
     // Gli Instruction Pointer per ogni thread
-    int ** ips = calloc(numThreads, sizeof(int *));
-    ips[0] = memory;
+    //int ** ips = calloc(numThreads, sizeof(int *));
+    //ips[0] = memory;
 
     // Le direzioni di ogni thread
-    char * dirs = calloc(numThreads, sizeof(char));
-    dirs[0] = RIGHT;
+    //char * dirs = calloc(numThreads, sizeof(char));
+    //dirs[0] = RIGHT;
 
     // Stack per threads
-    stacks = calloc(numThreads, sizeof(Stack));
-    stacks[0] = stackInit();
+    //stacks = calloc(numThreads, sizeof(Stack));
+    //stacks[0] = stackInit();
 
+    //int * mails = calloc(numThreads, sizeof(int));
+    //int * states = calloc(numThreads, sizeof(int));
+    //mails[0] = 0;
+    //states[0] = RUNNING;
+    
     // Array di bool; dicono se il thread n-esimo può essere eseguito in questo turno
-    char * canGos = calloc(numThreads, sizeof(char));
-    canGos[0] = 1;
+    //char * canGos = calloc(numThreads, sizeof(char));
+    //canGos[0] = 1;
 
     
-    if (debugMode)  printf("turn\ttid\tip\tout\tstack\n");
+    if (debugMode)  printf("turn\ttid\tip\tdir\tout\tstack\n");
     
     int c1, c2, c3;
     char * string;
     char updateIp = 1;
     int turn = 0;
+    Thread * thread = NULL;
     
     while (1) {
         
         for (Node threadId = orderExecution; threadId != NULL; threadId = threadId -> next) {         
-            int thread = threadId -> val;
+            //int thread = threadId -> val;
+            thread = threads[threadId -> val];
 
             // Non esegui i thread nati in questo turno
-            if (!canGos[thread]) continue;
+            if (!(thread -> canGo)) continue;
             
             // Non esegui dei thread morti in questo turno
-            if (!linkedFind(orderExecution, thread)) continue;
+            if (!linkedFind(orderExecution, thread -> id)) continue; /////MMMMMH BUG?!?!
             
             updateIp = 1;
                         
-            if (debugMode) printf("%d\t%d\t%c\t", turn, thread, *ips[thread]);
+            if (debugMode) printf("%d\t%d\t%c\t%d\t", turn, thread->id, *(thread -> ip), thread->dir);
             
-            switch (*ips[thread]) {
+            switch (*(thread -> ip)) {
                 case '+':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], (c1+c2) % maxSize);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, (c1+c2) % maxSize);
                     break;
                 case '-':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], (c2-c1) % maxSize);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, (c2-c1) % maxSize);
                     break;
                 case '*':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], (c1*c2) % maxSize);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, (c1*c2) % maxSize);
                     break;
                 case '/':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    c1 = stackPop(thread -> stack);
+                    c2 = stackPop(thread -> stack);
                     if (c1 == 0)
-                        stackPush(stacks[thread], 0); //undefined behaviour
+                        stackPush(thread -> stack, 0); //undefined behaviour
                     else
-                        stackPush(stacks[thread], (c2 / c1) % maxSize); // necessario il maxSize?
+                        stackPush(thread -> stack, (c2 / c1) % maxSize); // necessario il maxSize?
                     break;
                 case '%':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], (c2 % c1) % maxSize); //ordine giusto?
+                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, (c2 % c1) % maxSize); //ordine giusto?
                     break;
 
                 case '!':
-                    c1 = stackPop(stacks[thread]);
-                    (c1 == 0) ? stackPush(stacks[thread], 1) : stackPush(stacks[thread], 0);
+                    c1 = stackPop(thread -> stack);
+                    (c1 == 0) ? stackPush(thread -> stack, 1) : stackPush(thread -> stack, 0);
                     break;
                 case '`':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    (c2 > c1) ? stackPush(stacks[thread], 1) : stackPush(stacks[thread], 0);
+                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    (c2 > c1) ? stackPush(thread -> stack, 1) : stackPush(thread -> stack, 0);
                     break;
                     
                 case '>':
-                    dirs[thread] = RIGHT;
+                    thread -> dir = RIGHT;
                     break;
                 case '<':
-                    dirs[thread] = LEFT;
+                    thread -> dir = LEFT;
                     break;
                 case '^':
-                    dirs[thread] = UP;
+                    thread -> dir = UP;
                     break;
                 case 'v':
-                    dirs[thread] = DOWN;
+                    thread -> dir = DOWN;
                     break;
                 case '?':
-                    dirs[thread] = rand() % 4;   // Giusto
+                    thread -> dir = rand() % 4;   // Giusto
                     break;
                 case '{':
                     if (!threadedMode) continue;
                     
                     numThreads++;
-                    ips = realloc(ips, numThreads * sizeof(int *));
-                    stacks = realloc(stacks, numThreads * sizeof(Stack));
-                    dirs = realloc(dirs, numThreads * sizeof(char));
-                    canGos = realloc(canGos, numThreads * sizeof(char));
                     
-                    linkedExpand(orderExecution, thread, numThreads-1); //giusto se messo proprio qui?
+                    linkedExpand(orderExecution, thread -> id, numThreads-1); //giusto se messo proprio qui?
 
-                    ips[numThreads-1] = move(DOWN, ips[thread]);    //copia 1:1 di ips[thread],
-                    
-                    stacks[numThreads-1] = malloc(sizeof(Stack));
-                    stacks[numThreads-1] = stackCopy(stacks[thread]);
-                    dirs[numThreads-1] = RIGHT;
-                    canGos[numThreads-1] = 0;
+                    threads = realloc(threads, numThreads * sizeof(Thread *));
+                    threads[numThreads-1] = createThread(numThreads-1, move(DOWN, thread -> ip), 
+                                                         0, RIGHT, stackCopy(thread -> stack), -1, RUNNING);
 
-                    ips[thread] = move(UP, ips[thread]);
+                    thread -> ip = move(UP, thread -> ip);
 
                     //updateIp = 0;
 
                     continue;
                     
+                //case 'w':
+                    //c1 = stackPop(stacks[thread]);
+                    
                 case '_':
-                    c1 = stackPop(stacks[thread]);
-                    (c1 == 0) ? (dirs[thread] = RIGHT) : (dirs[thread] = LEFT);
+                    c1 = stackPop(thread -> stack);
+                    (c1 == 0) ? (thread -> dir = RIGHT) : (thread -> dir = LEFT);
                     break;
                 case '|':
-                    c1 = stackPop(stacks[thread]);
-                    (c1 == 0) ? (dirs[thread] = DOWN) : (dirs[thread] = UP);
+                    c1 = stackPop(thread -> stack);
+                    (c1 == 0) ? (thread -> dir = DOWN) : (thread -> dir = UP);
                     break;
 
                 case '"':
-                    ips[thread] = move(dirs[thread], ips[thread]);
-                    while (*ips[thread] != '"') {
-                        stackPush(stacks[thread], *ips[thread]);
-                        ips[thread] = move(dirs[thread], ips[thread]);
+                    thread -> ip = move(thread -> dir, thread -> ip);
+                    while (*(thread -> ip) != '"') {
+                        stackPush(thread -> stack, *(thread -> ip));
+                        thread -> ip = move(thread -> dir, thread -> ip);
                     }
                     break;
 
                 case ':':
-                    c1 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c1);
-                    stackPush(stacks[thread], c1);
+                    c1 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, c1);
+                    stackPush(thread -> stack, c1);
                     break;
                 case '\\':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
-                    stackPush(stacks[thread], c1);
-                    stackPush(stacks[thread], c2);
+                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
+                    stackPush(thread -> stack, c1);
+                    stackPush(thread -> stack, c2);
                     break;
                 case '$':
-                    stackPop(stacks[thread]);
+                    stackPop(thread -> stack);
                     break;
                 case '.':
-                    printf("%d ", stackPop(stacks[thread]));
+                    printf("%d ", stackPop(thread -> stack));
                     break;
                 case ',':
-                    printf("%c", stackPop(stacks[thread]));
+                    printf("%c", stackPop(thread -> stack));
                     break;
 
                 case '#':
-                    ips[thread] = move(dirs[thread], ips[thread]);
+                    thread -> ip = move(thread -> dir, thread -> ip);
                     break;
 
                 case 'g':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]);
+                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack);
                     if (c1 >= 25 || c1 < 0 || c2 >= 80 || c2 < 0)
-                        stackPush(stacks[thread], 0);
+                        stackPush(thread -> stack, 0);
                     else
-                        stackPush(stacks[thread], CELL(c2, c1));
+                        stackPush(thread -> stack, CELL(c2, c1));
                     break;
                 case 'p':
-                    c1 = stackPop(stacks[thread]), c2 = stackPop(stacks[thread]), c3 = stackPop(stacks[thread]);
+                    c1 = stackPop(thread -> stack), c2 = stackPop(thread -> stack), c3 = stackPop(thread -> stack);
                     CELL(c2, c1) = c3;
                     break;
 
@@ -241,12 +276,12 @@ void exec(int debugMode, int threadedMode, int bits) {
                     string = calloc(maxSize + 1, sizeof(char)); // + 1 giusto? (32 bit + bit terminazione)
                     fgets(string, maxSize + 1, stdin);
                     
-                    stackPush(stacks[thread], atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
+                    stackPush(thread -> stack, atoi(string)); //Mah mah mah (ALTA PROBABILIYA BUG)
                     free(string);
                     break;
                 case '~':
                     c1 = getchar();
-                    stackPush(stacks[thread], c1); //Mah mah mah
+                    stackPush(thread -> stack, c1); //Mah mah mah
                     break;
 
                 
@@ -256,29 +291,37 @@ void exec(int debugMode, int threadedMode, int bits) {
                     numThreads--;
                     if (numThreads == 0) return;
 
-                    linkedRemove(orderExecution, thread);
+                    linkedRemove(orderExecution, threadId -> val);
                     
-                    ips[thread] = NULL;
-                    free(stacks[thread]);
-                    stacks[thread] = NULL;
-                    dirs[thread] = -1;
-                    canGos[thread] = -1;
+                    //free(threads[threadId -> val]);
+                    thread -> ip = NULL;
+                    free(thread -> stack);
+                    thread -> stack = NULL;
+                    thread -> dir = -1;
+                    thread -> canGo = -1;
+                    thread -> mail = -1;
+                    thread -> state = KILLED;
 
                     continue;
 
                 case '0' ... '9':
-                    stackPush(stacks[thread], *ips[thread] - 48);
+                    stackPush(thread -> stack, *(thread -> ip) - 48);
                     break;
             }
 
-            if (debugMode) stackPrint(stacks[thread]);
-            if (updateIp)  ips[thread] = move(dirs[thread], ips[thread]);
+            if (debugMode) stackPrint(thread -> stack);
+            if (updateIp)  thread -> ip = move(thread -> dir, thread -> ip);
         }
 
         // Mark all threads as executable in the next turn 
-        for (int t=0; t<numThreads; t++)
-            if (canGos[t] != -1) canGos[t] = 1;
+        for (int t=0; t<numThreads; t++) {
+            if (threads[t] -> canGo != -1) 
+                threads[t] -> canGo = 1;
+        }
         turn++;
+        
+        if (debugMode)
+            getchar();
     }
 }
 
